@@ -1,0 +1,30 @@
+version: "1"
+repos:
+  github.com/nathanleclaire/100brushes:
+    default:
+      prompt: >
+        I have a Go app, the start of the file looks like this.
+
+        $(head -100 ./sman/main.go)
+
+        Write me some code to
+        
+        {{range $i, $arg := .Args}}
+        - {{ $arg }}
+        {{end}}
+
+        Omit comments.
+    sql:
+      prompt: >
+        I have a sqlite3 schema like this
+
+        {{range $index, $table := .Args[0]}}
+          $(sqlite3 100brushes.sqlite3 '.schema {{ $table }}')
+        {{end}}
+
+        Write me a query to {{.Args[1]}} with jmoiron/sqlx.
+        You can skip the sqlx.Open, I already have an instance, db.
+        You can also assume that I have structs for these already
+        that correspond to the table name. If there is an error,
+        use logrus.WithFields("error", err).Error to log it and
+        then do an http.Error. Omit comments.
