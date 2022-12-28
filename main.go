@@ -9,6 +9,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v2"
 )
@@ -31,6 +33,11 @@ func main() {
 		return
 	}
 
+	debug := false
+	if os.Getenv("DEBUG") != "" {
+		debug = true
+	}
+
 	bytes, err := ioutil.ReadFile(filepath.Join(home, ".qrgpt.yaml"))
 	if err != nil {
 		fmt.Println(err)
@@ -47,13 +54,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, "------")
 		fmt.Fprintln(os.Stderr, string(bytes))
 		os.Exit(1)
-	}
-
-	// Create args slice
-	args := [][]string{}
-	for _, arg := range os.Args[1:] {
-		split := strings.Fields(arg)
-		args = append(args, split)
 	}
 
 	// Get the origin URL of the repo
@@ -84,34 +84,29 @@ func main() {
 		return
 	}
 
-	tmpl, err := template.New("prompt").Parse(repoConfig.Prompt)
+	execFunc := template.FuncMap(map[string]any{
+		"exec": func(args ...string) string {
+			cmd := exec.Command(args[0], args[1:]...)
+			if debug {
+				spew.Dump(cmd)
+			}
+			output, err := cmd.CombinedOutput()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "====> ERROR:", err)
+				fmt.Fprintln(os.Stderr, string(output))
+				os.Exit(1)
+			}
+			return string(output)
+		},
+	})
+	tmpl, err := template.New("prompt").Funcs(execFunc).Funcs(sprig.FuncMap()).Parse(repoConfig.Prompt)
 	if err != nil {
 		panic(err)
 	}
 	var promptBuilder strings.Builder
-	err = tmpl.Execute(&promptBuilder, struct{ Args [][]string }{args})
+	err = tmpl.Execute(&promptBuilder, struct{ Args []string }{os.Args})
 	if err != nil {
 		panic(err)
 	}
-	prompt := promptBuilder.String()
-	for {
-		startIndex := strings.Index(prompt, "$(")
-		if startIndex == -1 {
-			break
-		}
-		endIndex := strings.Index(prompt[startIndex:], ")")
-		if endIndex == -1 {
-			break
-		}
-		subshell := prompt[startIndex+2 : startIndex+endIndex]
-		cmd := exec.Command("sh", "-c", subshell)
-		output, err := cmd.Output()
-		if err != nil {
-			panic(err)
-		}
-		outputStr := strings.TrimSpace(string(output))
-		prompt = prompt[:startIndex] + outputStr + prompt[startIndex+endIndex+1:]
-	}
-
-	fmt.Println(prompt)
+	fmt.Println(promptBuilder.String())
 }
