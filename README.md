@@ -1,6 +1,6 @@
 # qrgpt
 
-<img width="663" alt="Screen Shot 2022-12-28 at 10 28 49 PM" src="https://user-images.githubusercontent.com/1476820/209899581-1f17131a-5d23-42e4-aed7-a5123937c29c.png">
+<img width="663" alt="Screen Shot 2022-12-28 at 10 28 49 PM" src="https://user-images.githubusercontent.com/1476820/209899581-1f17131a-5d23-42e4-aed7-a5123937c29c.png?w=256">
 
 [ChatGPT](https://chat.openai.com/) is an excellent tool, but it functions best when
 given specific instruction such as app-specific concepts, including database table schemas,
